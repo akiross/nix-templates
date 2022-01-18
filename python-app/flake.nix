@@ -45,6 +45,12 @@
                 hello()
           '';
 
+        ## Example script that depends on a specific python environment
+        my_help_script = pkgs.writeShellScriptBin "my_help_script" ''
+          echo "Running tests!"
+          ${my_py_env_dev}/bin/pytest
+        '';
+
       in
       rec {
         # The application we are packaging.
@@ -67,6 +73,7 @@
         # A development shell for nix develop.
         devShell = pkgs.mkShell {
           buildInputs = [
+            my_help_script
             my_py_tool
             my_py_env
             my_py_env_dev
