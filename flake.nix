@@ -5,5 +5,9 @@
       path = ./python-app;
       description = "A python app with dependencies";
     };
+    python-notebook = {
+      path = ./python-notebook;
+      description = "A python notebook for development";
+    };
   };
 }
