@@ -1,0 +1,78 @@
+WIP this is not working and I'm trying to figure out why :/
+{
+  description = "Cross-compiled Rust application";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/master";
+    naersk = {
+      url = "github:nmattia/naersk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    utils = {
+      url = "github:numtide/flake-utils";
+    };
+  };
+
+  outputs = { naersk, nixpkgs, rust-overlay, self, utils }:
+    utils.lib.eachDefaultSystem (system:
+      let
+        # Get packages with rust overlay
+        pkgs = import nixpkgs {
+          inherit system;
+          crossSystem.config = "x86_64-w64-mingw32";
+          overlays = [ rust-overlay.overlays.default ];
+        };
+
+        # Rust toolchain to use
+        rust = pkgs.rust-bin.stable.latest.minimal;
+
+        # Get naersk-lib using that rust version
+        naersk-lib = naersk.lib."${system}".override {
+          cargo = rust;
+          rustc = rust;
+        };
+
+        cc = pkgs.pkgsCross.mingwW64.stdenv.cc;
+      in
+      rec {
+        # packages.default = naersk-lib.buildPackage {
+        #   pname = "rust-app";
+        #   src = ./.;
+
+        #   structDepts = true;
+        #   depsBuildBuild = with pkgs; [
+        #     cc # pkgsCross.mingwW64.stdenv.cc
+        #     pkgsCross.mingwW64.windows.pthreads
+        #   ];
+
+        #   nativeBuildInputs = with pkgs; [
+        #     wineWowPackages.stable
+        #   ];
+
+        #   doCheck = true;
+
+        #   CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
+        #   CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${cc}/bin/${cc.targetPrefix}cc";
+        #   CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER = pkgs.writeScript "wine-wrapper" ''
+        #     export WINEPREFIX="$(mktemp -d)"
+        #     exec wine64 $@
+        #   '';
+        # };
+
+        sto guardando questi
+        https://github.com/oxalica/rust-overlay/issues/87
+        da cui https://github.com/oxalica/rust-overlay/blob/660018f3a78e1f83e4e4aa569d9c6e2a31b0222c/docs/cross_compilation.md
+        da cui https://github.com/NixOS/nixpkgs/issues/49526
+
+        devShell = pkgs.mkShell {
+          nativeBuildInputs = with pkgs.pkgsCross.mingwW64.buildPackage; [
+            rust-bin.stable.latest.default
+          ];
+        };
+      }
+    );
+}
